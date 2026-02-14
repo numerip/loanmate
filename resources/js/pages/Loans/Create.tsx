@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import {useState, useEffect} from 'react';
+import {useForm} from '@inertiajs/react';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { parse } from 'path';
 
 
 interface LoanItem {
@@ -76,12 +78,41 @@ const [interestRate, setInterestRate] = useState(0);
 const [months, setMonths] = useState(0);
 const [payable, setPayable] = useState(0);
 
+
+
+
+
+const {data, setData, post, processing, errors, progress} = useForm({
+
+    borrower_name: '',
+    borrower_phone: '',
+    amount: 0,
+    interest_rate: '',
+    max_months: '',
+     payable: 0,
+     collateral_name: '',
+     collateral_value: '',
+     description: '',
+     image_url: null as File | null
+
+});
+
 useEffect(() => {
 
-    const payableAmount = (amount * (1 + interestRate / 100));
-    setPayable(parseFloat(payableAmount.toFixed(2)));
+    const payableAmount = (parseFloat(amount.toString()) * (1 + parseFloat(interestRate.toString()) / 100));
+    // setPayable(parseFloat(payableAmount.toFixed(2)));
+    setData('payable', parseFloat(payableAmount.toFixed(2)));
+    // console.log("Something has changed");
 
 }, [amount, interestRate, months]);
+
+const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Submitting form with data:', data);
+    post(loans.store().url, {
+            forceFormData: true,
+    });
+}
 
 
     return (
@@ -90,12 +121,13 @@ useEffect(() => {
             <div className="flex h-full flex-1 items-center justify-center p-6">
             <div className="w-full max-w-2xl rounded-xl border bg-white p-8 shadow-sm">
 
-                <Form
-                    action={loans.store().url}
-                    method="post"
+                <form
+                    // action={loans.store().url}
+                    // method="post"
                     encType="multipart/form-data"
+                    onSubmit={handleSubmit}
                 >
-                    {({ processing, errors }) => (
+
                         <div className="grid gap-6">
 
                             {/* ================= Loan Section ================= */}
@@ -108,6 +140,8 @@ useEffect(() => {
                                     <Input
                                         id="borrower_name"
                                         type="text"
+                                        value={data.borrower_name}
+                                        onChange={(e)=>setData('borrower_name', e.target.value || '')}
                                         name="borrower_name"
                                         required
                                         autoFocus
@@ -121,6 +155,8 @@ useEffect(() => {
                                         id="borrower_phone"
                                         type="text"
                                         name="borrower_phone"
+                                        value={data.borrower_phone}
+                                        onChange={(e)=>setData('borrower_phone', e.target.value)}
                                         required
                                         autoFocus
                                         placeholder="Enter borrower phone number"
@@ -134,9 +170,12 @@ useEffect(() => {
                                         id="amount"
                                         type="number"
                                         step="0.01"
+                                        value={data.amount}
                                         name="amount"
                                         onChange={(e) =>
-                                                setAmount(parseFloat(e.target.value) || 0)
+                                                {setData('amount', parseFloat(e.target.value));
+                                                 setAmount(parseFloat(e.target.value) || 0)
+                                                }
                                             }
                                         required
                                         placeholder="Enter loan amount"
@@ -159,21 +198,30 @@ useEffect(() => {
                                         required
                                         placeholder="Interest rate"
                                     /> */}
-                                    <Select items={interestRateItems} onValueChange={(value) => setInterestRate(parseInt(value) || 40)}>
+                                    <Select  value={data.interest_rate ?? ""}
+                                        onValueChange={(value) => {setData("interest_rate", value); setInterestRate(parseFloat(value) || 0)}}
+                                    >
                                         <SelectTrigger className="w-full max-w-48">
-                                            <SelectValue />
+                                            <SelectValue placeholder="Select interest rate" />
                                         </SelectTrigger>
+
                                         <SelectContent>
                                             <SelectGroup>
-                                            <SelectLabel>Interest Rate</SelectLabel>
-                                            {interestRateItems.map((item) => (
-                                                <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
-                                                </SelectItem>
-                                            ))}
+                                                <SelectLabel>Interest Rate</SelectLabel>
+
+                                                {interestRateItems.map((item) => (
+                                                    <SelectItem
+                                                        key={item.value}
+                                                        value={String(item.value)}   // ✅ MUST be string
+                                                    >
+                                                        {item.label}
+                                                    </SelectItem>
+                                                ))}
+
                                             </SelectGroup>
                                         </SelectContent>
-                                        </Select>
+                                    </Select>
+
                                     <InputError message={errors.interest_rate} />
                                 </div>
 
@@ -194,22 +242,32 @@ useEffect(() => {
                                         placeholder="Number of months"
                                     /> */}
 
-                                     <Select items={monthsItems} onValueChange={(value) => setMonths(parseInt(value) || 1)}>
-                                        <SelectTrigger className="w-full max-w-48">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                            <SelectLabel>Months</SelectLabel>
-                                            {monthsItems.map((item) => (
-                                                <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
-                                                </SelectItem>
-                                            ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                        </Select>
-                                    <InputError message={errors.months} />
+                                      <Select
+                                                value={data.max_months ?? ""}
+                                                onValueChange={(value) => {setData("max_months", value);setMonths(parseInt(value) || 0)}}
+                                            >
+                                                <SelectTrigger className="w-full max-w-48">
+                                                    <SelectValue placeholder="Select months" />
+                                                </SelectTrigger>
+
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectLabel>Months</SelectLabel>
+
+                                                        {monthsItems.map((item) => (
+                                                            <SelectItem
+                                                                key={item.value}
+                                                                value={String(item.value)}   // ✅ force string
+                                                            >
+                                                                {item.label}
+                                                            </SelectItem>
+                                                        ))}
+
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+
+                                    <InputError message={errors.max_months} />
                                 </div>
 
                                 <div className="grid gap-2">
@@ -220,14 +278,15 @@ useEffect(() => {
                                         id="payable"
                                         type="number"
                                         name="payable"
-                                        value={payable}
+                                        value={data.payable}
+                                        onChange={(e)=>setData('payable', parseFloat(e.target.value) || 0)}
                                         required
                                         readOnly
                                         placeholder="Payable amount"
                                     />
                                     <InputError message={errors.payable} />
                                 </div>
-
+{/*
                                 <div className="grid gap-2 md:col-span-2">
                                     <Label htmlFor="date_of_borrowing">
                                         Date of Borrowing
@@ -239,7 +298,7 @@ useEffect(() => {
                                         required
                                     />
                                     <InputError message={errors.date_of_borrowing} />
-                                </div>
+                                </div> */}
                             </div>
 
                             {/* ================= Collateral Section ================= */}
@@ -258,6 +317,8 @@ useEffect(() => {
                                         type="text"
                                         name="collateral_name"
                                         required
+                                        value={data.collateral_name}
+                                        onChange={(e)=>setData('collateral_name', e.target.value)}
                                         placeholder="Car, House, Land..."
                                     />
                                     <InputError message={errors.collateral_name} />
@@ -271,29 +332,55 @@ useEffect(() => {
                                         id="collateral_value"
                                         type="number"
                                         step="0.01"
+                                        value={data.collateral_value}
                                         name="collateral_value"
                                         required
+                                        onChange={(e)=>setData('collateral_value', e.target.value)}
                                         placeholder="Enter value"
                                     />
                                     <InputError message={errors.collateral_value} />
                                 </div>
 
-                                <div className="grid gap-2 md:col-span-2">
+                                <div className="grid gap-2">
                                     <Label htmlFor="image_url">
                                         Collateral Image
                                     </Label>
                                     <Input
                                         id="image_url"
                                         type="file"
+                                        onChange={e => {
+                                            const file = e.target.files?.[0] ?? null;
+                                            setData("image_url", file);
+                                        }}
                                         name="image_url"
                                         accept="image/*"
                                     />
                                     <InputError message={errors.image_url} />
                                 </div>
+                              <div className="grid gap-2">
+                                    <Label htmlFor="description">
+                                        Description
+                                    </Label>
+                                    <Input
+                                        id="description"
+                                        type="text"
+                                        name="description"
+                                        value ={data.description}
+                                        onChange={(e)=>setData('description', e.target.value)}
+                                        placeholder="Additional details about the collateral"
 
+                                    />
+                                    <InputError message={errors.description} />
+                                </div>
                             </div>
 
                             {/* ================= Submit ================= */}
+
+                            {progress && (
+                        <progress value={progress.percentage} max="100">
+                            {progress.percentage}%
+                        </progress>
+                                  )}
                             <Button
                                 type="submit"
                                 className="mt-6 w-full"
@@ -304,8 +391,7 @@ useEffect(() => {
                             </Button>
 
                         </div>
-                    )}
-                </Form>
+                </form>
 
             </div>
         </div>

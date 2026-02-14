@@ -25,17 +25,17 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
-    },
+    },{
+            title: 'Loans',
+            href: loans.index(),
+            icon: BookOpen,
+        },
         {
             title: 'Collaterals',
             href: collaterals.index(),
             icon: Folder,
         },
-        {
-            title: 'Loans',
-            href: loans.index(),
-            icon: BookOpen,
-        },
+
 ];
 
 const footerNavItems: NavItem[] = [

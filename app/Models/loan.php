@@ -13,6 +13,7 @@ class loan extends Model
         'borrower_phone',
         'amount',
         'interest_rate',
+        'payable',
         'max_months',
         'date_of_borrowing',
     ];

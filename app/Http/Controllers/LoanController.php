@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\loan;
+use App\Models\Collateral;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -31,29 +32,36 @@ class LoanController extends Controller
      */
     public function store(Request $request)
     {
+        $loan = Loan::create($request->only([
+            'user_id',
+            'borrower_name',
+            'borrower_phone',
+            'amount',
+            'interest_rate',
+            'max_months',
+            'payable',
+            'date_of_borrowing'
+        ]));
 
-    $loan = Loan::create($request->only([
-        'user_id',
-        'borrower_name',
-        'borrower_phone',
-        'amount',
-        'interest_rate',
-        'months',
-        'payable',
-        'date_of_borrowing'
-    ]));
+        $imagePath = null;
 
-    Collateral::create([
-        'loan_id' => $loan->id,
-        'name' => $request->input('collateral_name'),
-        'value' => $request->input('collateral_value'),
-        'image_url' => $request->file('image_url')
-                        ? $request->file('image_url')->store('collaterals', 'public')
-                        : null,
-    ]);
+        if ($request->hasFile('image_url')) {
+            $imagePath = $request->file('image_url')
+                                ->store('collaterals', 'public');
+        }
 
+        Collateral::create([
+            'loan_id' => $loan->loan_id,
+            'name' => $request->input('collateral_name'),
+            'value' => $request->input('collateral_value'),
+            'description' => $request->input('description'),
+            'image_url' => $imagePath,
+        ]);
+// dd($request->all(), $request->file('image_url'));
 
-    return redirect()->route('loans.index')->with('success', 'Loan created successfully!');
+        return redirect()->route('loans.index')
+            ->with('success', 'Loan created successfully!');
+
     }
 
     /**
